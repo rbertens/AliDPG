@@ -40,6 +40,8 @@ enum EGenerator_t {
   kGeneratorAMPT, kGeneratorAMPT_v226t7,
   // Therminator2
   kGeneratorTherminator2,
+  // JEWEL (via aligenmc)
+  kGeneratorJEWEL,
   // QED electrons
   kGeneratorQED,
   //
@@ -81,6 +83,8 @@ const Char_t *GeneratorName[kNGenerators] = {
   "AMPT", "AMPT_v226t7",
   // Therminator2
   "Therminator2",
+  // JEWEL
+  "JEWEL",
   // QED electrons
   "QED",
   //
@@ -193,6 +197,7 @@ AliGenerator *GeneratorDRgen();
 AliGenerator *GeneratorAMPT();
 AliGenerator *GeneratorAMPT_v226t7();
 AliGenerator *GeneratorTherminator2();
+AliGenerator *GeneratorJEWEL();
 AliGenerator *GeneratorQED();
 
 /*****************************************************************/
@@ -304,7 +309,10 @@ void GeneratorConfig(Int_t tag)
  case kGeneratorTherminator2:
     gen = GeneratorTherminator2();
     break;
-
+ 
+ case kGeneratorJEWEL:
+    gen = GeneratorJEWEL();
+    break;
   case kGeneratorQED:
     gen = GeneratorQED();
     break;
@@ -1419,6 +1427,34 @@ GeneratorTherminator2()
     gener->SetPathScript(gSystem->ExpandPathName("$ALIDPG_ROOT/MC/EXTRA/gen_therm2.sh"));
     return gener;
 }
+
+/*** JEWEL ****************************************************/
+
+AliGenerator *
+GeneratorJEWEL()
+{
+
+
+  // run JEWEL via aligenmc
+  TString fifoname = "jeweleventfifo";
+  gROOT->ProcessLine(Form(".! rm -rf %s", fifoname.Data()));
+  gROOT->ProcessLine(Form(".! mkfifo %s", fifoname.Data()));
+  gROOT->ProcessLine(Form(".! sh $ALIDPG_ROOT/MC/aligenmc/gen_jewel.sh %i %i %s %s &> gen_jewel.log &", 
+              energyConfig,
+              neventsConfig,
+              "jewel",
+              fifoname.Data()));
+  // connect HepMC reader
+  AliGenReaderHepMC *reader = new AliGenReaderHepMC();
+  reader->SetFileName(fifoname.Data());
+  AliGenExtFile *gener = new AliGenExtFile(-1);
+  gener->SetName(Form("JEWEL_%s", systemConfig.Data()));
+  gener->SetReader(reader);
+  
+  return gener;
+}
+
+
 
 /*** COCKTAIL ****************************************************/
 
